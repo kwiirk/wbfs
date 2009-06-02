@@ -614,7 +614,6 @@ error:
 	return 0;
 }
 
-#ifdef ENABLE_RENAME
 u32 wbfs_ren_disc(wbfs_t*p, u8* discid, u8* newname)
 {
 	wbfs_disc_t *d = wbfs_open_disc(p, discid);
@@ -623,33 +622,20 @@ u32 wbfs_ren_disc(wbfs_t*p, u8* discid, u8* newname)
 	if(!d)
 		return 1;
 	
-#ifdef WIN32
 	memset(d->header->disc_header_copy+0x20, 0, 0x40);
-	strncpy(d->header->disc_header_copy+0x20, newname, 0x39);
-#else
-	//printf("renaming ID:%s to %s\n", discid, newname);
-	
-	if(strlen((const char *)newname) >= 0x40) 
-		newname[0x39] = 0;
-	
-	strcpy((char *)(d->header->disc_header_copy+0x20), (const char *)newname);
-#endif
-	
+	strncpy(d->header->disc_header_copy+0x20, (char*)newname, 0x39);
+	d->header->disc_header_copy[0x20+0x39] = '\0'; //force last char to 0
+
 	p->write_hdsector(p->callback_data,
 					  p->part_lba+1+d->i*disc_info_sz_lba,
 					  disc_info_sz_lba,
 					  d->header);
 	
 	wbfs_close_disc(d);
-#ifndef WIN32
-	// This was missing here for the windows implementation. Fix? - g3power
 	wbfs_sync(p);
-#endif
 	return 0;
 }
-#endif
 
-#ifdef ENABLE_CHANGE_DISKID
 u32 wbfs_nid_disc(wbfs_t*p, u8* discid, u8* newid)
 {
 	wbfs_disc_t *d = wbfs_open_disc(p, discid);
@@ -672,16 +658,13 @@ u32 wbfs_nid_disc(wbfs_t*p, u8* discid, u8* newid)
 	wbfs_sync(p);
 	return 0;
 }	
-#endif
 	
-#ifdef WIN32
-// Could this be useful for other platforms? - g3power
 u32 wbfs_estimate_disc
 	(
 		wbfs_t *p, read_wiidisc_callback_t read_src_wii_disc,
 		void *callback_data,
 		partition_selector_t sel
-	)
+                )
 {
 	u8 *b;
 	int i;
@@ -713,7 +696,6 @@ u32 wbfs_estimate_disc
 	b = (u8 *)info;
 	read_src_wii_disc(callback_data, 0, 0x100, info->disc_header_copy);
 	
-	fprintf(stderr, "estimating %c%c%c%c%c%c %s...\n",b[0], b[1], b[2], b[3], b[4], b[5], b + 0x20);
 	
 	for (i = 0; i < p->n_wbfs_sec_per_disc; i++)
 	{
@@ -735,7 +717,6 @@ error:
 	
 	return tot * ((p->wbfs_sec_sz / p->hd_sec_sz) * 512);
 }
-#endif
 
 u32 wbfs_rm_disc(wbfs_t*p, u8* discid)
 {

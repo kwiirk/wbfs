@@ -25,16 +25,6 @@
 #include "libwbfs.h"
 
 
-#ifdef ENABLE_RENAME
-#ifndef ENABLE_RENAME_OR_CHANGE_DISKID
-#define ENABLE_RENAME_OR_CHANGE_DISKID
-#endif
-#endif	
-#ifdef ENABLE_CHANGE_DISKID
-#ifndef ENABLE_RENAME_OR_CHANGE_DISKID
-#define ENABLE_RENAME_OR_CHANGE_DISKID
-#endif
-#endif	
 
 
 wbfs_t *wbfs_try_open(char *disk, char *partition, int reset);
@@ -629,8 +619,7 @@ void wbfs_applet_rename(wbfs_t *p, BOOL shortcmd, int argc, char *argv[])
 
 #else
 
-#ifdef ENABLE_RENAME
-int wbfs_applet_ren(wbfs_t *p,char *arg1, char *arg2)
+int wbfs_applet_rename(wbfs_t *p,char *arg1, char *arg2)
 {
 	if(wbfs_ren_disc(p,(u8*)arg1,(u8*)arg2))
 	{
@@ -639,8 +628,6 @@ int wbfs_applet_ren(wbfs_t *p,char *arg1, char *arg2)
 	
 	return 0;
 }
-#endif
-
 int wbfs_applet_create(char*argv)
 {
         char buf[1024];
@@ -667,7 +654,6 @@ int wbfs_applet_create(char*argv)
 
 #endif
 
-#ifdef ENABLE_CHANGE_DISKID
 int wbfs_applet_nid(wbfs_t *p,char *arg1, char *arg2)
 {	
 	if(wbfs_nid_disc(p,(u8*)arg1, (u8*)arg2))
@@ -677,7 +663,6 @@ int wbfs_applet_nid(wbfs_t *p,char *arg1, char *arg2)
 	
 	return 0;
 }
-#endif
 
 
 #ifdef WIN32
@@ -696,9 +681,7 @@ struct wbfs_applets
 	char *opt;
 	int (*function_with_argument)(wbfs_t *p, char *argv);
 	int (*function)(wbfs_t *p);
-#ifdef ENABLE_RENAME_OR_CHANGE_DISKID
 	int (*func_args)(wbfs_t *p, char *arg1, char *arg2);
-#endif
 } 
 
 #endif
@@ -709,15 +692,9 @@ struct wbfs_applets
 #define APPLET_NOARG(x, y) { #x, #y, "", NULL, wbfs_applet_##x }
 
 #else
-#ifndef ENABLE_RENAME_OR_CHANGE_DISKID
-#define APPLET(x) { #x,wbfs_applet_##x,NULL}
-#define APPLET_NOARG(x) { #x,NULL,wbfs_applet_##x}
-#else
 #define APPLET(x) { #x,wbfs_applet_##x,NULL,NULL}
 #define APPLET_NOARG(x) { #x,NULL,wbfs_applet_##x,NULL}
 #define APPLET_ARGS(x) { #x, NULL, NULL, wbfs_applet_##x}
-#endif
-
 #endif
 
 
@@ -728,11 +705,11 @@ wbfs_applets[] =
         APPLET_NOARG(info, i),
         APPLET_NOARG(makehbc, hbc),
         APPLET_NOARG(init, init),
-		APPLET(estimate, e, <file>),
+        APPLET(estimate, e, <file>),
         APPLET(add, a, <file> [new_name]),
-		APPLET(rename, r, <ID> <new_name>),
+        APPLET(rename, r, <ID> <new_name>),
         APPLET(extract, x, <ID> [iso_name]),
-		APPLET(remove, d, <ID>)
+        APPLET(remove, d, <ID>)
 };
 
 #undef APPLET
@@ -748,13 +725,8 @@ wbfs_applets[] =
         APPLET_NOARG(init),
         APPLET(add),
         APPLET(rm),
-#ifdef ENABLE_RENAME
-		APPLET_ARGS(ren),
-#endif
-#ifdef ENABLE_CHANGE_DISKID
-		APPLET_ARGS(nid),
-#endif
-
+        APPLET_ARGS(rename),
+        APPLET_ARGS(nid),
         APPLET(extract),
 };
 
@@ -790,30 +762,9 @@ void usage(char **argv)
                 argv[0]);
 
 	for (i = 0; i < num_applets; i++)
-#ifdef ENABLE_RENAME
-			if (strcmp(wbfs_applets[i].opt, "ren") == 0) {
-				fprintf(stderr, "\t %s %s\n",wbfs_applets[i].opt, wbfs_applets[i].func_args ? "(file|id) (file|name)" : "");
-			}
-#endif	
-#ifdef ENABLE_RENAME
-#ifdef ENABLE_CHANGE_DISKID
-			else 
-#endif	
-#endif	
-#ifdef ENABLE_CHANGE_DISKID
-			if (strcmp(wbfs_applets[i].opt, "nid") == 0) {
-				fprintf(stderr, "\t %s %s\n",wbfs_applets[i].opt, wbfs_applets[i].func_args ? "(file|id) (file|id)" : "");
-			}
-#endif	
-#ifdef ENABLE_RENAME_OR_CHANGE_DISKID
-			else {
-#endif	
-                fprintf(stderr, "\t %s %s\n",wbfs_applets[i].opt,wbfs_applets[i].function_with_argument?"(file|id)":"");
-
-#ifdef ENABLE_RENAME_OR_CHANGE_DISKID
-			}
-#endif	
-
+                fprintf(stderr, "\t %s %s %s\n",wbfs_applets[i].opt,wbfs_applets[i].function_with_argument||wbfs_applets[i].func_args
+                        ?"(file|id)":"",
+                        wbfs_applets[i].func_args?"(newid|newname)":"");
         exit(EXIT_FAILURE);
 }
 #endif
@@ -965,32 +916,31 @@ int main(int argc, char *argv[])
 			wbfs_t *p = wbfs_try_open(disk, partition,
 									  ap->function== wbfs_applet_init);
 			if(!p)
-					break;
-#ifdef ENABLE_RENAME_OR_CHANGE_DISKID
-			if ( (strcmp(argv[optind], "ren") == 0) || (strcmp(argv[optind], "nid") == 0)) {
-				ap->func_args(p, argv[optind+1], argv[optind+2]);
-				break;
-				
-			} else {
-#endif
-				if (ap->function_with_argument)
-				{
-					if (optind + 1 >= argc)
-						usage(argv);
-					else
-                                                while (optind + 1 < argc){
-                                                        ap->function_with_argument(p, argv[optind+1]);
-                                                        optind++;
-                                                }
-				}
-				else 
-				{
-					ap->function(p);
-				}
-		
-#ifdef ENABLE_RENAME_OR_CHANGE_DISKID
-			}
-#endif
+                                break;
+                        if (ap->function_with_argument)
+                        {
+                                if (optind + 1 >= argc)
+                                        usage(argv);
+                                else
+                                        while (optind + 1 < argc){
+                                                ap->function_with_argument(p, argv[optind+1]);
+                                                optind++;
+                                        }
+                        }
+                        else if (ap->function_with_argument){
+                                if (optind + 2 >= argc)
+                                        usage(argv);
+                                else
+                                        while (optind + 2 < argc){
+                                                ap->func_args(p, argv[optind+1], argv[optind+2]);
+                                                optind+=2;
+                                        }
+                        }
+                        else 
+                        {
+                                ap->function(p);
+                        }
+                        
 			wbfs_close(p);
 			break;
 		}
