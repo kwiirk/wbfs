@@ -927,7 +927,7 @@ int main(int argc, char *argv[])
                                                 optind++;
                                         }
                         }
-                        else if (ap->function_with_argument){
+                        else if (ap->func_args){
                                 if (optind + 2 >= argc)
                                         usage(argv);
                                 else
