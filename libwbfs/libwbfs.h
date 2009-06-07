@@ -223,10 +223,8 @@ u32 wbfs_add_disc(wbfs_t*p,read_wiidisc_callback_t read_src_wii_disc,
 #endif
 					);
 
-#ifdef WIN32
 u32 wbfs_estimate_disc(wbfs_t*p,read_wiidisc_callback_t read_src_wii_disc, void *callback_data,
                   partition_selector_t sel);
-#endif
 
 /*! remove a wiidvd inside a partition */
 u32 wbfs_rm_disc(wbfs_t*p, u8* discid);
@@ -254,6 +252,22 @@ u32 wbfs_extract_file(wbfs_disc_t*d, char *path);
 
 // remove some sanity checks
 void wbfs_set_force_mode(int force);
+
+
+/* OS specific functions provided by libwbfs_<os>.c */
+
+wbfs_t *wbfs_try_open(char *disk, char *partition, int reset);
+wbfs_t *wbfs_try_open_partition(char *fn, int reset);
+
+void *wbfs_open_file_for_read(char*filename);
+void *wbfs_open_file_for_write(char*filename);
+int wbfs_read_file(void*handle, int len, void *buf);
+void wbfs_close_file(void *handle);
+void wbfs_file_reserve_space(void*handle,long long size);
+void wbfs_file_truncate(void *handle,long long size);
+int wbfs_read_wii_file(void *_handle, u32 _offset, u32 count, void *buf);
+int wbfs_write_wii_sector_file(void *_handle, u32 lba, u32 count, void *buf);
+
 
 #ifdef __cplusplus
    }

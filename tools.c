@@ -394,12 +394,13 @@ void fatal(const char *s, ...)
 
 void non_fatal(const char *s, ...)
 {
+	char message[256];
 	va_list ap;
 
 	va_start(ap, s);
-	vfprintf(stderr, s, ap);
-	fprintf(stderr, "\n");
-	va_end(ap);
+	vsnprintf(message, sizeof message, s, ap);
+
+	perror(message);
 }
 
 //
@@ -499,7 +500,6 @@ void spinner(u64 x, u64 max)
 	fflush(stderr);
 }
 
-#ifdef WIN32
 void progress(u64 x, u64 max)
 {
 	static time_t start_time;
@@ -560,4 +560,3 @@ void progress(u64 x, u64 max)
 	fprintf(stderr, "\rETA: %d:%02d:%02d [%s]", h, m, s, prg);
 	fflush(stderr);
 }
-#endif

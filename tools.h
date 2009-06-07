@@ -61,8 +61,6 @@ void print_bytes(u8 *x, u32 n);
 void hexdump(u8 *x, u32 n);
 void dump_tmd(u8 *tmd);
 void spinner(u64 x, u64 max);
-#ifdef WIN32
 void progress(u64 x, u64 max);
-#endif
 
 #endif

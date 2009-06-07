@@ -10,6 +10,109 @@
 
 #include "libwbfs.h"
 
+void *wbfs_open_file_for_read(char*filename)
+{
+	HANDLE *handle = CreateFile(filename, GENERIC_READ, 0, NULL, OPEN_EXISTING, 0, NULL);
+
+	if (handle == INVALID_HANDLE_VALUE)
+        {
+		fprintf(stderr, "unable to open disc file\n");
+                return 0;
+        }
+        return (void*)handle;
+}
+void *wbfs_open_file_for_write(char*filename)
+{
+	HANDLE *handle = CreateFile(filename, GENERIC_READ | GENERIC_WRITE, 0, NULL, CREATE_NEW, 0, NULL);
+	if (handle == INVALID_HANDLE_VALUE)
+        {
+		fprintf(stderr, "unable to open file\n");
+                return 0;
+        }
+        return (void*)handle;
+}
+int wbfs_read_file(void*handle, int len, void *buf)
+{
+        DWORD read;
+        ReadFile((HANDLE)handle, buf, len, &read, NULL);
+        return read;
+}
+void wbfs_close_file(void *handle)
+{
+        CloseHandle((HANDLE)handle);
+}
+void wbfs_file_reserve_space(void*handle,long long size)
+{
+        LARGE_INTEGER large;
+        large.QuadPart = size;
+        SetFilePointerEx((HANDLE)handle, large, NULL, FILE_BEGIN);
+        SetEndOfFile((HANDLE)handle);
+}
+int wbfs_read_wii_file(void *_handle, u32 _offset, u32 count, void *buf)
+{
+	HANDLE *handle = (HANDLE *)_handle;
+	LARGE_INTEGER large;
+	DWORD read;
+	u64 offset = _offset;
+	
+	offset <<= 2;
+	large.QuadPart = offset;
+	
+	if (SetFilePointerEx(handle, large, NULL, FILE_BEGIN) == FALSE)
+	{
+		wbfs_error("error seeking in disc file");
+		return 1;
+	}
+	
+	read = 0;
+	if ((ReadFile(handle, buf, count, &read, NULL) == FALSE) || !read)
+	{
+		wbfs_error("error reading wii disc sector");
+		return 1;
+	}
+
+	if (read < count)
+	{
+		wbfs_warning("warning: requested %d, but read only %d bytes (trimmed or bad padded ISO)", count, read);
+		wbfs_memset((u8*)buf+read, 0, count-read);
+	}
+
+	return 0;
+}
+
+int wbfs_write_wii_sector_file(void *_handle, u32 lba, u32 count, void *buf)
+{
+	HANDLE *handle = (HANDLE *)_handle;
+	LARGE_INTEGER large;
+	DWORD written;
+	u64 offset = lba;
+	
+	offset *= 0x8000;
+	large.QuadPart = offset;
+	
+	if (SetFilePointerEx(handle, large, NULL, FILE_BEGIN) == FALSE)
+	{
+		fprintf(stderr,"\n\n%lld %p\n", offset, handle);
+		wbfs_error("error seeking in wii disc sector (write)");
+		return 1;
+	}
+	
+	written = 0;
+	if (WriteFile(handle, buf, count * 0x8000, &written, NULL) == FALSE)
+	{
+		wbfs_error("error writing wii disc sector");
+		return 1;
+	}
+
+	if (written != count * 0x8000)
+	{
+		wbfs_error("error writing wii disc sector (size mismatch)");
+		return 1;
+	}
+	
+	return 0;
+}
+
 static int read_sector(void *_handle, u32 lba, u32 count, void *buf)
 {
 	HANDLE *handle = (HANDLE *)_handle;

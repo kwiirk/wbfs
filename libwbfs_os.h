@@ -17,8 +17,9 @@
 #define wbfs_error fatal
 #define wbfs_warning non_fatal
 #else
-#define wbfs_fatal(x) fatal(x)
-#define wbfs_error(x) non_fatal(x)
+#define wbfs_fatal fatal
+#define wbfs_error non_fatal
+#define wbfs_warning non_fatal
 #endif
 
 #include <stdlib.h>

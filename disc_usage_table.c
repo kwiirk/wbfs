@@ -114,39 +114,24 @@ static void copy_file(u64 offset, u64 size)
 }
 
 
-static u32 do_fst(u8 *fst, const char *names, u32 i, char *indent, int is_last)
+static u32 do_fst(u8 *fst, const char *names, u32 i, char *indent)
 {
 	u64 offset;
 	u32 size;
-#ifdef UNUSED_STUFF
-	const char *name;
-	u32 parent;
-#endif
 	u32 j;
 
-#ifdef UNUSED_STUFF
-	name = names + (be32(fst + 12*i) & 0x00ffffff);
-#endif
 	size = be32(fst + 12*i + 8);
 
 	if (i == 0) {
 		for (j = 1; j < size; )
-			j = do_fst(fst, names, j, indent, (j == size - 1));
+			j = do_fst(fst, names, j, indent);
 		return size;
 	}
-
-#ifdef UNUSED_STUFF
-	if (fst[12*i]) {
-		parent = be32(fst + 12*i + 4);
-		is_last = (be32(fst + 12*parent + 8) == size);
-	}
-#endif
-
 
 	if (fst[12*i]) {
 
 		for (j = i + 1; j < size; )
-			j = do_fst(fst, names, j, indent, (j == size - 1));
+			j = do_fst(fst, names, j, indent);
 
 		indent[strlen(indent) - 4] = 0;
 		return size;
@@ -191,7 +176,7 @@ static void do_files(void)
 
 	indent[0] = 0;
 	if (n_files > 1)
-		do_fst(fst, (char *)fst + 12*n_files, 0, indent, 0);
+		do_fst(fst, (char *)fst + 12*n_files, 0, indent);
 
 	free(fst);
 }
