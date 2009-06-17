@@ -270,7 +270,7 @@ void encrypt(char *buff)
             y[j]=fkey[k++]^ftable[(u8)x[j]]^
                  ROTL8(ftable[(u8)(x[fi[m]]>>8)])^
                  ROTL16(ftable[(u8)(x[fi[m+1]]>>16)])^
-                 ROTL24(ftable[x[fi[m+2]]>>24]);
+                 ROTL24(ftable[(u8)(x[fi[m+2]]>>24)]);
         }
         t=x; x=y; y=t;      /* swap pointers */
     }
@@ -281,7 +281,7 @@ void encrypt(char *buff)
         y[j]=fkey[k++]^(u32)fbsub[(u8)x[j]]^
              ROTL8((u32)fbsub[(u8)(x[fi[m]]>>8)])^
              ROTL16((u32)fbsub[(u8)(x[fi[m+1]]>>16)])^
-             ROTL24((u32)fbsub[x[fi[m+2]]>>24]);
+             ROTL24((u32)fbsub[(u8)(x[fi[m+2]]>>24)]);
     }   
     for (i=j=0;i<Nb;i++,j+=4)
     {
@@ -316,7 +316,7 @@ void decrypt(char *buff)
             y[j]=rkey[k++]^rtable[(u8)x[j]]^
                  ROTL8(rtable[(u8)(x[ri[m]]>>8)])^
                  ROTL16(rtable[(u8)(x[ri[m+1]]>>16)])^
-                 ROTL24(rtable[x[ri[m+2]]>>24]);
+                 ROTL24(rtable[(u8)(x[ri[m+2]]>>24)]);
         }
         t=x; x=y; y=t;      /* swap pointers */
     }
@@ -327,7 +327,7 @@ void decrypt(char *buff)
         y[j]=rkey[k++]^(u32)rbsub[(u8)x[j]]^
              ROTL8((u32)rbsub[(u8)(x[ri[m]]>>8)])^
              ROTL16((u32)rbsub[(u8)(x[ri[m+1]]>>16)])^
-             ROTL24((u32)rbsub[x[ri[m+2]]>>24]);
+             ROTL24((u32)rbsub[(u8)(x[ri[m+2]]>>24)]);
     }        
     for (i=j=0;i<Nb;i++,j+=4)
     {

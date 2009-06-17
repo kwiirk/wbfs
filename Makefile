@@ -6,7 +6,10 @@ LIBS = -lcrypto
 CC = gcc
 CFLAGS = -Wall -W -O3 -Ilibwbfs -I.
 #CFLAGS = -Wall -m32 -W  -ggdb -Ilibwbfs -I.
+
+# manually switch flags if you are on amd64 (should test that in makefile)
 LDFLAGS = -m32
+#LDFLAGS = -m64 -L/usr/lib64
 
 VPATH+=libwbfs
 OBJS = $(patsubst %,%.o,$(PROGS)) $(COMMON)

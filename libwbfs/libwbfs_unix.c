@@ -126,7 +126,12 @@ static int get_capacity(char *file,u32 *sector_size,u32 *n_sector)
 		return 0;
 	}
 #if defined(__linux__) || defined(__CYGWIN__)
-	ret = ioctl(fd,BLKSSZGET,sector_size);
+        if (sizeof(void *) == 8) {
+          unsigned long long sec_size;
+          ret = ioctl(fd,BLKSSZGET,&sec_size);
+          *sector_size = (unsigned int) sec_size;
+        } else
+          ret = ioctl(fd,BLKSSZGET,sector_size);
 #else //__APPLE__
 	ret = ioctl(fd,DKIOCGETBLOCKSIZE,sector_size);
 #endif
@@ -142,7 +147,12 @@ static int get_capacity(char *file,u32 *sector_size,u32 *n_sector)
 		return 1;
 	}
 #if defined(__linux__) || defined(__CYGWIN__)
-	ret = ioctl(fd,BLKGETSIZE,n_sector);
+        if (sizeof(void *) == 8) {
+          unsigned long long n_sec;
+          ret = ioctl(fd,BLKGETSIZE,&n_sec);
+          *n_sector = (unsigned int) n_sec;
+        } else
+          ret = ioctl(fd,BLKGETSIZE,n_sector);
 #else //__APPLE__
 	long long my_n_sector;
 	ret = ioctl(fd,DKIOCGETBLOCKCOUNT,&my_n_sector);
