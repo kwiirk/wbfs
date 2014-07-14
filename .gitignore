@@ -1,0 +1,6 @@
+*.o
+macosx/wbfs/wbfs.xcodeproj/xcuserdata
+macosx/wbfs/wbfs.xcodeproj/project.xcworkspace
+negentig
+scrub
+wbfs
